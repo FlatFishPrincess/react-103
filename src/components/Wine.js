@@ -3,9 +3,12 @@ import PropTypes from 'prop-types';
 import { Loader } from '.';
 import * as WinesService from '../services/Wines';
 import { LikeButton, CommentButton, CommentList, CommentModal } from '.';
+import { fetchCurrentWine, fetchCurrentWineComments } from '../actions'
+import { connect } from 'react-redux'
 
 export class Wine extends Component {
   render() {
+    console.log('wine',this.props)
     if (this.props.wine === null) {
       return null;
     }
@@ -49,39 +52,28 @@ export class Wine extends Component {
   }
 }
 
-export class WinePage extends Component {
+class _WinePage extends Component {
   static contextTypes = {
     router: PropTypes.object,
   };
 
-  state = {
-    loading: false,
-    selectedWine: null,
-    commentModalOpen: false,
-  };
-
   componentDidMount() {
     const id = this.props.params.wineId;
-    this.setState({ loading: true }, () => {
-      WinesService.fetchWine(id).then(wine => {
-        this.setState({
-          loading: false,
-          selectedWine: wine,
-        });
-      });
-    });
+    this.props.fetchCurrentWine(id)
+    this.props.fetchCurrentWineComments(id)
   }
 
   closeCommentModal = () => {
-    this.setState({ commentModalOpen: false });
+    //this.setState({ commentModalOpen: false });
   };
 
   openCommentModal = () => {
-    this.setState({ commentModalOpen: true });
+    //this.setState({ commentModalOpen: true });
   };
 
   render() {
-    if (this.state.loading) {
+    console.log('this.props in WinePage',this.props)
+    if (this.props.loading) {
       return (
         <div className="center-align">
           <Loader />
@@ -89,18 +81,38 @@ export class WinePage extends Component {
       );
     }
     return (
-      <div>
+       <div>
         <Wine
           host={WinesService.host}
-          wine={this.state.selectedWine}
-          openCommentModal={this.openCommentModal}
+          wine={this.props.wine}
+          // openCommentModal={this.openCommentModal}
         />
-        <CommentModal
-          wine={this.state.selectedWine}
-          isOpen={this.state.commentModalOpen}
-          closeCommentModal={this.closeCommentModal}
-        />
+         <CommentModal
+           wine={this.props.wine}
+          //  isOpen={this.props.commentModalOpen}
+          //  closeCommentModal={this.closeCommentModal}
+         />
       </div>
     );
   }
 }
+
+function mapFromStoreToProps(store) {
+  console.log('map from store to props, store.currentWine.wine',store)
+  return {
+    //wine: store.currentWine.wine,
+    wine: store.currentWine ? store.currentWine.wine : null,
+    comments: store.currentWine ? store.currentWine.comments : [],
+    liked: store.currentWine ? store.currentWine.liked : false,
+    loading: store.loading === 'HTTP_LOADING',
+  };
+}
+
+const mapDispatchToProps = {
+    fetchCurrentWine,
+    fetchCurrentWineComments
+}
+
+
+export const WinePage = connect(mapFromStoreToProps, mapDispatchToProps)(_WinePage);
+
